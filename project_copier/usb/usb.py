@@ -6,6 +6,10 @@ log = logging.getLogger()
 
 
 class FlashDrive:
+    """
+    Класс для USB-разделов
+    """
+
     def __init__(self, letter, size):
         self.letter = letter
         self.size = size
@@ -24,6 +28,10 @@ class FlashDrive:
 
 
 def run_powershell() -> bytes:
+    """
+    Исполняет PowerShell-скрипт и возвращает результат
+    """
+
     args = [
         'powershell',
         '-noprofile',
@@ -46,6 +54,10 @@ def run_powershell() -> bytes:
 
 
 def get_usb_drives() -> list[FlashDrive]:
+    """
+    Возвращает USB-разделы, представленные списком FlashDrive
+    """
+
     try:
         result = run_powershell()
     except subprocess.CalledProcessError as e:

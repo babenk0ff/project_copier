@@ -3,7 +3,7 @@ import tkinter
 import tkinter as tk
 from tkinter import messagebox, ttk
 
-from project_copier.actions import handle_files
+from project_copier.actions import handle_dirs
 from project_copier.usb import get_usb_drives
 from .exceptions import DirNotExistError
 
@@ -24,7 +24,7 @@ class GUI:
         self._drives = []
         self._drives_listbox = self._get_listbox()
         self._drives_label = self._get_label('Select USB-flash')
-        self._make_copy = lambda: handle_files(
+        self._make_copy = lambda: handle_dirs(
             self._root,
             self._dir_path,
             self._dirs_listbox,
@@ -58,24 +58,35 @@ class GUI:
         return label
 
     def _load_dirs_list(self):
+        """
+        Заполняет _dirs_listbox имеющимися по пути _dir_path директориями
+        """
+
         if os.path.isdir(self._dir_path):
             self._dirs = [
                 d for d
                 in os.listdir(self._dir_path)
                 if os.path.isdir(os.path.join(self._dir_path, d))
             ]
+
             for d in self._dirs:
                 self._dirs_listbox.insert(tk.END, d)
+
             self._dirs_listbox.config(height=len(self._dirs))
             self._dirs_listbox.selection_set(0)
         else:
             raise DirNotExistError
 
     def _load_listbox_drives(self):
+        """
+        Заполняет _drives_listbox имеющимися USB-разделами
+        """
+
         self._drives = get_usb_drives()
         for drive in self._drives:
             drive_record = str(drive)
             self._drives_listbox.insert(tk.END, drive_record)
+
         self._drives_listbox.config(height=len(self._drives))
         self._drives_listbox.selection_set(0)
 
@@ -99,6 +110,10 @@ class GUI:
         return bar
 
     def start(self):
+        """
+        Запуск графического интерфейса
+        """
+
         try:
             self._load_dirs_list()
             self._load_listbox_drives()
