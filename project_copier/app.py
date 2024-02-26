@@ -18,7 +18,6 @@ def main():
     """
     Точка входа в приложение
     """
-
     dir_path = get_path()
     app = GUI(dir_path)
     app.start()

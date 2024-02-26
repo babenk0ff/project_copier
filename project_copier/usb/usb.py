@@ -1,6 +1,7 @@
 import json
 import logging
 import subprocess
+from pathlib import Path
 
 log = logging.getLogger()
 
@@ -27,17 +28,23 @@ class FlashDrive:
         return f'{size}MB'
 
 
+def get_script():
+    """
+    Получает содержимое powershell-скрипта
+    """
+    app_path = Path(__file__).parent.resolve()
+    with open(app_path / 'get_usb_drives.ps1', 'r', encoding='utf-8') as f:
+        script = f.read()
+
+    return script
+
+
 def run_powershell() -> bytes:
     """
     Исполняет PowerShell-скрипт и возвращает результат
     """
-
-    args = [
-        'powershell',
-        '-noprofile',
-        '-file',
-        r'.\project_copier\usb\get_usb_drives.ps1',
-    ]
+    script = get_script()
+    args = ['powershell', '-noprofile', '-command', script]
 
     proc_result = subprocess.run(
         args=args,
@@ -57,11 +64,11 @@ def get_usb_drives() -> list[FlashDrive]:
     """
     Возвращает USB-разделы, представленные списком FlashDrive
     """
-
     try:
         result = run_powershell()
     except subprocess.CalledProcessError as e:
         log.error(e.stderr.decode('cp866'))
+        raise
     else:
         drives = json.loads(result)
         usb_drives = [

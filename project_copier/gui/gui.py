@@ -1,9 +1,11 @@
 import os
+import subprocess
+import sys
 import tkinter
 import tkinter as tk
 from tkinter import messagebox, ttk
 
-from project_copier.actions import handle_dirs
+from project_copier.gui.actions import handle_dirs
 from project_copier.usb import get_usb_drives
 from .exceptions import DirNotExistError
 
@@ -24,20 +26,15 @@ class GUI:
         self._drives = []
         self._drives_listbox = self._get_listbox()
         self._drives_label = self._get_label('Select USB-flash')
-        self._make_copy = lambda: handle_dirs(
-            self._root,
-            self._dir_path,
-            self._dirs_listbox,
-            self._drives,
-            self._drives_listbox,
-        )
-        self._button = self._get_button()
+        self._button = self._get_button('Copy')
         self._progress_bar = self._get_progress_bar()
 
     @staticmethod
     def _get_root():
         root = tk.Tk()
         root.title('Transfer project')
+        root.resizable(False, False)
+        root.maxsize(304, 774)
 
         return root
 
@@ -57,11 +54,25 @@ class GUI:
 
         return label
 
+    def _get_button(self, text):
+        button = tkinter.Button(self._root, text=text)
+
+        return button
+
+    def _get_progress_bar(self):
+        bar = ttk.Progressbar(
+            self._root,
+            orient='horizontal',
+            mode='determinate',
+            name='progress_bar',
+        )
+
+        return bar
+
     def _load_dirs_list(self):
         """
         Заполняет _dirs_listbox имеющимися по пути _dir_path директориями
         """
-
         if os.path.isdir(self._dir_path):
             self._dirs = [
                 d for d
@@ -81,8 +92,11 @@ class GUI:
         """
         Заполняет _drives_listbox имеющимися USB-разделами
         """
+        try:
+            self._drives = get_usb_drives()
+        except subprocess.CalledProcessError:
+            sys.exit(1)
 
-        self._drives = get_usb_drives()
         for drive in self._drives:
             drive_record = str(drive)
             self._drives_listbox.insert(tk.END, drive_record)
@@ -90,46 +104,39 @@ class GUI:
         self._drives_listbox.config(height=len(self._drives))
         self._drives_listbox.selection_set(0)
 
-    def _get_button(self):
-        button = tkinter.Button(
+    def _pack_elements(self):
+        self._dirs_label.pack()
+        self._dirs_listbox.pack()
+
+        self._drives_label.pack()
+        self._drives_listbox.pack()
+
+        self._button.config(command=lambda: handle_dirs(
             self._root,
-            text='Copy',
-            command=self._make_copy,
-        )
+            self._dir_path,
+            self._dirs_listbox,
+            self._drives,
+            self._drives_listbox,
+        ))
+        self._button.pack(fill='both', padx=10, pady=10)
 
-        return button
+        self._progress_bar.pack(fill='both')
 
-    def _get_progress_bar(self):
-        bar = ttk.Progressbar(
-            self._root,
-            orient='horizontal',
-            mode='determinate',
-            name='progress_bar',
-        )
-
-        return bar
+        self._root.eval('tk::PlaceWindow . center')
 
     def start(self):
         """
         Запуск графического интерфейса
         """
-
         try:
             self._load_dirs_list()
             self._load_listbox_drives()
 
-            self._dirs_label.pack()
-            self._dirs_listbox.pack()
+            self._pack_elements()
 
-            self._drives_label.pack()
-            self._drives_listbox.pack()
-
-            self._button.pack(fill='both', padx=10, pady=10)
-            self._progress_bar.pack(fill='both')
+            self._root.mainloop()
 
         except DirNotExistError:
             msg = f'Dir "{self._dir_path}" not exist!'
             show_error_message(msg, self._root)
             return
-
-        self._root.mainloop()
